@@ -1,17 +1,12 @@
 #!/usr/bin/env python
 # from __future__ import print_function, absolute_import, division
 
-import logging
-import os
-import pathlib
-from Crypto.Cipher import ChaCha20
-
 from errno import EACCES
+import logging
 import threading
-
-import psutil
+import os
+from Crypto.Cipher import ChaCha20
 import fuse
-
 
 
 class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
@@ -68,9 +63,9 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
             os.lseek(fh, offset, 0)
             plain_chunk = os.read(fh, size)
             cipher = ChaCha20.new(key=self.key, nonce=b"aaaaaaaaaaaa")
+            cipher.seek(offset)
             cipher_chunk = cipher.decrypt(plain_chunk)
             return cipher_chunk
-            # return plain_chunk
 
     def readdir(self, path, fh):
         return ['.', '..'] + os.listdir(path)
@@ -106,9 +101,9 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
             os.lseek(fh, offset, 0)
             plain_chunk = data
             cipher = ChaCha20.new(key=self.key, nonce=b"aaaaaaaaaaaa")
+            cipher.seek(offset)
             encrypted_chunk = cipher.encrypt(plain_chunk)
             return os.write(fh, encrypted_chunk)
-            #return os.write(fh, data)
 
 
 def open_fuse(root: str, mount: str, key: bytearray) -> fuse.FUSE:
