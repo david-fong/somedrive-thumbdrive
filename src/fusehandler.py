@@ -3,37 +3,14 @@
 
 import logging
 import os
+import pathlib
 
 from errno import EACCES
-from os.path import realpath
-from threading import Lock
+import threading
 
+import psutil
 import fuse
 
-# Note: The ChaCha20 stream cipher seems like a sensible choice
-# provides efficient random access and has some strengths over AES.
-
-
-def is_drive_encrypted(root: str) -> bool:
-    pass # TODO
-
-
-def fully_encrypt_drive(root: str, key: bytearray):
-    # TODO
-    # throw if the brand file is present
-    # add the brand file. it contains a hash of the key
-    #   Interesting: https://stackoverflow.com/questions/25432139/python-cross-platform-hidden-file
-    # walk root and encrypt. skip links.
-    pass
-
-
-def fully_decrypt_drive(root: str, key: bytearray):
-    # TODO
-    # throw if brand_file is not present
-    # check that the key hashes to the value in the brand file
-    # remove the brand file
-    # walk root and decrypt. skip links.
-    pass
 
 
 class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
@@ -42,9 +19,9 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
     """
     def __init__(self, root, key: bytearray):
         # TODO throw if brand file is missing or key does not hash to its contents
-        self.root = realpath(root)
+        self.root = os.path.realpath(root)
         self.key = key
-        self.rwlock = Lock()
+        self.rwlock = threading.Lock()
 
     def __call__(self, op, path, *args):
         return super(CrytoOperations, self).__call__(op, self.root + path, *args)
