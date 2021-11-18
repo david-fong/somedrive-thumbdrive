@@ -4,6 +4,7 @@
 import logging
 import os
 import pathlib
+from Crypto.Cipher import ChaCha20
 
 from errno import EACCES
 import threading
@@ -19,6 +20,7 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
     """
     def __init__(self, root, key: bytearray):
         # TODO throw if brand file is missing or key does not hash to its contents
+
         self.root = os.path.realpath(root)
         self.key = key
         self.rwlock = threading.Lock()
@@ -49,7 +51,7 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
         st = os.lstat(path)
         return dict((key, getattr(st, key)) for key in (
             'st_atime', 'st_ctime', 'st_gid', 'st_mode', 'st_mtime',
-            'st_nlink', 'st_size', 'st_uid', 'std_blocks'))
+            'st_nlink', 'st_size', 'st_uid')) # do we need 'std_blocks'?
 
     getxattr = None
 
@@ -64,8 +66,11 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
     def read(self, path, size, offset, fh):
         with self.rwlock:
             os.lseek(fh, offset, 0)
-            # TODO decrypt data
-            return os.read(fh, size)
+            plain_chunk = os.read(fh, size)
+            cipher = ChaCha20.new(key=self.key, nonce=b"aaaaaaaaaaaa")
+            cipher_chunk = cipher.decrypt(plain_chunk)
+            return cipher_chunk
+            # return plain_chunk
 
     def readdir(self, path, fh):
         return ['.', '..'] + os.listdir(path)
@@ -97,14 +102,18 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
     utimens = os.utime
 
     def write(self, path, data, offset, fh):
-        # TODO encrypt data
         with self.rwlock:
             os.lseek(fh, offset, 0)
-            return os.write(fh, data)
+            plain_chunk = data
+            cipher = ChaCha20.new(key=self.key, nonce=b"aaaaaaaaaaaa")
+            encrypted_chunk = cipher.encrypt(plain_chunk)
+            return os.write(fh, encrypted_chunk)
+            #return os.write(fh, data)
 
 
-def open_fuse(root: str, mount: str) -> fuse.FUSE:
-    return fuse.FUSE(CrytoOperations(root), mount, foreground=True, allow_other=False)
+def open_fuse(root: str, mount: str, key: bytearray) -> fuse.FUSE:
+    # TODO throw if realpath of root is inside mount
+    return fuse.FUSE(CrytoOperations(root, key), mount, foreground=True, allow_other=False)
 
 
 if __name__ == '__main__':
