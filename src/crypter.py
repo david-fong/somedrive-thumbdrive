@@ -2,6 +2,8 @@ import os
 import pathlib
 import psutil
 from Crypto.Cipher import ChaCha20
+import win32api
+import win32con
 import win32file
 
 # Note: The ChaCha20 stream cipher seems like a sensible choice
@@ -11,16 +13,10 @@ BRAND_FILE_NAME = "thumbprint-thumbdrive.txt"
 
 
 def get_removable_drives():
-    drive_list = []
-    drivebits=win32file.GetLogicalDrives()
-    for d in range(1,26):
-        mask=1 << d
-        if drivebits & mask:
-            drive_name='%c:\\' % chr(ord('A')+d)
-            drive_type=win32file.GetDriveType(drive_name)
-            if drive_type == win32file.DRIVE_REMOVABLE:
-                drive_list.append(drive_name)
-    return drive_list
+    drives = [i for i in win32api.GetLogicalDriveStrings().split('\x00') if i]
+    rdrives = [d for d in drives if win32file.GetDriveType(d) == win32con.DRIVE_REMOVABLE]
+    return rdrives
+
 
 
 def get_encrypted_drives():
@@ -28,14 +24,15 @@ def get_encrypted_drives():
     return [x for x in usb_list if is_drive_encrypted(x)]
 
 
+
 def get_unenecrypted_drives():
     usb_list = get_removable_drives()
     return [x for x in usb_list if not is_drive_encrypted(x)]
 
 
+
 def is_drive_encrypted(root: str) -> bool:
     return pathlib.Path(root, BRAND_FILE_NAME).is_file()
-
 
 def fully_encrypt_drive(root: str, key: bytearray):
     # throw if the brand file is present
