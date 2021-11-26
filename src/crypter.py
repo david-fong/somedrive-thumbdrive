@@ -2,6 +2,7 @@ import os
 import pathlib
 import psutil
 from Crypto.Cipher import ChaCha20
+import win32file
 
 # Note: The ChaCha20 stream cipher seems like a sensible choice
 # provides efficient random access and has some strengths over AES.
@@ -9,12 +10,27 @@ from Crypto.Cipher import ChaCha20
 BRAND_FILE_NAME = "thumbprint-thumbdrive.txt"
 
 
+def get_removable_drives():
+    drive_list = []
+    drivebits=win32file.GetLogicalDrives()
+    for d in range(1,26):
+        mask=1 << d
+        if drivebits & mask:
+            drive_name='%c:\\' % chr(ord('A')+d)
+            drive_type=win32file.GetDriveType(drive_name)
+            if drive_type == win32file.DRIVE_REMOVABLE:
+                drive_list.append(drive_name)
+    return drive_list
+
+
 def get_encrypted_drives():
-    return [x for x in psutil.disk_partitions(all=False) if is_drive_encrypted(x)]
+    usb_list = get_removable_drives()
+    return [x for x in usb_list if is_drive_encrypted(x)]
 
 
 def get_unenecrypted_drives():
-    return [x for x in psutil.disk_partitions(all=False) if not is_drive_encrypted(x)]
+    usb_list = get_removable_drives()
+    return [x for x in usb_list if not is_drive_encrypted(x)]
 
 
 def is_drive_encrypted(root: str) -> bool:
