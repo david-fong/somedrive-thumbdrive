@@ -43,16 +43,22 @@ class driveSelection(Page):
     def __init__(self):
         Page.__init__(self)
 
+        self.driveTextVar = StringVar()
+        self.driveTextVar.set("Please select which drive you would like to " + mode.lower())
+
+        label = Label(self, textvariable = self.driveTextVar)
+        label.place(relx=.5, rely=.4, anchor="c")
+
         drives = ["drive1", "drive2", "drive3"] #we would replace this with the function call
 
         self.driveVar = StringVar()
         self.driveVar.set(drives[0])
 
         dropdown = OptionMenu(self, self.driveVar, *drives)
-        dropdown.pack(side = "bottom", pady = 6)
+        dropdown.place(relx=.5, rely=0.5, anchor="c")
 
-        self.confirmButton = ttk.Button(text = mode, command = lambda:[self.thumbscan(), self.thumbscanWindow()])
-        #confirmButton.pack(side = "bottom", pady = 3)
+        self.confirmButton = ttk.Button(self, text = mode, command = lambda:[self.thumbscan(), self.thumbscanWindow()])
+        self.confirmButton.place(relx=.5, rely=0.6, anchor="c")
 
     def thumbscan(self):
         #label = ttk.Label(self, text = "main page skeleton")
@@ -62,12 +68,13 @@ class driveSelection(Page):
 
     def thumbscanWindow(self):
         tsWindow = Toplevel()
-        labelExample = ttk.Label(tsWindow, text = "New Window")
-        buttonExample = ttk.Button(tsWindow, text = "Scan", command = lambda:[self.executeThumbScan(tsWindow)])
+        tsLabel = ttk.Label(tsWindow, text = "Please scan your thumbprint on your finger scanner")
+        tsButton = ttk.Button(tsWindow, text = "Scan", command = lambda:[self.executeThumbScan(tsWindow)])
         self.confirmButton["state"] = "disabled"
+        tsWindow.wm_geometry("400x400")
 
-        labelExample.pack()
-        buttonExample.pack()
+        tsLabel.place(relx=.5, rely=0.5, anchor="c")
+        tsButton.place(relx=.5, rely=0.6, anchor="c")
     
     def executeThumbScan(self, tsWindow):
         #thumbscan stuff
@@ -82,30 +89,31 @@ class mainWindow(ttk.Frame):
         ttk.Frame.__init__(self)
         
         self.ds = driveSelection()
-        options = optionSelection()
+        #options = optionSelection()
 
         buttonFrame = ttk.Frame(self)
         container = ttk.Frame(self)
         
         container.pack(side="top", fill="both", expand=True)
-        buttonFrame.pack(side="top", fill="x", expand=False)
+        buttonFrame.pack(side="bottom", expand=False)
 
         #fps.place(in_=container, x=0, y=0, relwidth=1, relheight=1)
-        options.place(in_=container, x=0, y=0, relwidth=1, relheight=1)
-        self.ds.place(in_=container, x=0, y=0, relwidth=1, relheight=1)
+        #options.place(in_=container, x=0, y=0, relwidth=1, relheight=1)
+        self.label = ttk.Label(container, text = "Welcome to thumbprint thumbdrive")
+        self.label.place(relx=.5, rely=0.3, anchor="c")
 
-        self.encryptButton = ttk.Button(buttonFrame, text = "Encrypt", command = lambda:[self.ds.show(), self.goToDS("ENCRYPT")])
-        self.openButton = ttk.Button(buttonFrame, text = "Open", command = lambda:[self.ds.show(), self.goToDS("OPEN")])
-        self.decryptButton = ttk.Button(buttonFrame, text = "Decrypt", command = lambda:[self.ds.show(), self.goToDS("DECRYPT")])
+        self.encryptButton = ttk.Button(container, text = "Encrypt", command = lambda:[self.ds.place(in_=container, x=0, y=0, relwidth=1, relheight=1), self.goToDS("ENCRYPT")])
+        self.openButton = ttk.Button(container, text = "Open", command = lambda:[self.ds.place(in_=container, x=0, y=0, relwidth=1, relheight=1), self.goToDS("OPEN")])
+        self.decryptButton = ttk.Button(container, text = "Decrypt", command = lambda:[self.ds.place(in_=container, x=0, y=0, relwidth=1, relheight=1), self.goToDS("DECRYPT")])
 
-        self.encryptButton.pack(pady = "3")
-        self.openButton.pack(pady = "6")
-        self.decryptButton.pack(pady = "9")
+        self.encryptButton.place(relx=.5, rely=0.4, anchor="c")
+        self.openButton.place(relx=.5, rely=0.5, anchor="c")
+        self.decryptButton.place(relx=.5, rely=0.6, anchor="c")
 
-        self.backButton = ttk.Button(buttonFrame, text = "Back", command = lambda:[options.show(), self.goToOs()])
+        self.backButton = ttk.Button(buttonFrame, text = "Back", command = lambda:[self.ds.place_forget(), self.goToOs()])
         
         #bFPS.pack(side="left")
-        options.show()
+        #self.ds.place_forget()
         
     
     # have function for each button to switch pages
@@ -118,17 +126,20 @@ class mainWindow(ttk.Frame):
         self.openButton.pack_forget()
         self.decryptButton.pack_forget()
         self.ds.confirmButton.configure(text=mode)
-        self.ds.confirmButton.pack(side = "bottom", pady = 6)
-        self.backButton.pack(side = "bottom", pady = 3)
+        self.ds.driveTextVar.set("Please select which drive you would like to " + mode.lower())
+        #self.label.pack_forget()
+        
+        self.backButton.pack(side = "bottom", pady = "6")
+        #self.ds.confirmButton.pack(side = "top", pady = "6")
         #self.ds.show()
 
     def goToOs(self):
         self.ds.confirmButton.pack_forget()
         self.backButton.pack_forget()
-
-        self.encryptButton.pack(pady = "3")
-        self.openButton.pack(pady = "6")
-        self.decryptButton.pack(pady = "9")
+        self.label.place(relx=.5, rely=0.3, anchor="c")
+        self.encryptButton.place(relx=.5, rely=0.4, anchor="c")
+        self.openButton.place(relx=.5, rely=0.5, anchor="c")
+        self.decryptButton.place(relx=.5, rely=0.6, anchor="c")
 
 
 
