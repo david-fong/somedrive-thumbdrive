@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 # from __future__ import print_function, absolute_import, division
 
-from errno import EACCES
+import errno
 import logging
-import threading
 import os
+from pathlib import Path
+import threading
+
+import secrets
 from Crypto.Cipher import ChaCha20
 import fuse
 
@@ -25,13 +28,16 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 
     def access(self, path, mode):
         if not os.access(path, mode):
-            raise fuse.FuseOSError(EACCES)
+            raise fuse.FuseOSError(errno.EACCES)
 
     chmod = os.chmod
     chown = os.chown
 
     def create(self, path, mode):
-        return os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
+        fh = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
+        nonce = secrets.token_bytes(12)
+        os.write(fh, nonce)
+        return fh
 
     def flush(self, path, fh):
         return os.fsync(fh)
@@ -43,10 +49,11 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
             return os.fsync(fh)
 
     def getattr(self, path, fh=None):
-        st = os.lstat(path)
-        return dict((key, getattr(st, key)) for key in (
+        st = dict((key, getattr(os.lstat(path), key)) for key in (
             'st_atime', 'st_ctime', 'st_gid', 'st_mode', 'st_mtime',
             'st_nlink', 'st_size', 'st_uid')) # do we need 'std_blocks'?
+        st['st_size'] = st['st_size'] - 12
+        return 
 
     getxattr = None
 
@@ -60,9 +67,11 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 
     def read(self, path, size, offset, fh):
         with self.rwlock:
-            os.lseek(fh, offset, 0)
+            os.lseek(fh, -12, os.SEEK_END)
+            nonce = os.read(fh, 12)
+            os.lseek(fh, offset, os.SEEK_SET)
             plain_chunk = os.read(fh, size)
-            cipher = ChaCha20.new(key=self.key, nonce=b"aaaaaaaaaaaa")
+            cipher = ChaCha20.new(key=self.key, nonce=nonce)
             cipher.seek(offset)
             cipher_chunk = cipher.decrypt(plain_chunk)
             return cipher_chunk
@@ -91,23 +100,33 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 
     def truncate(self, path, length, fh=None):
         with open(path, 'r+') as f:
+            f.seek(-12, os.SEEK_END)
+            nonce = f.read(12)
             f.truncate(length)
+            f.seek(0, os.SEEK_END)
+            f.write(nonce)
 
     unlink = os.unlink
     utimens = os.utime
 
     def write(self, path, data, offset, fh):
         with self.rwlock:
-            os.lseek(fh, offset, 0)
+            os.lseek(fh, -12, os.SEEK_END)
+            nonce = os.read(fh, 12)
+            os.lseek(fh, offset, os.SEEK_SET)
             plain_chunk = data
-            cipher = ChaCha20.new(key=self.key, nonce=b"aaaaaaaaaaaa")
+            cipher = ChaCha20.new(key=self.key, nonce=nonce)
             cipher.seek(offset)
             encrypted_chunk = cipher.encrypt(plain_chunk)
             return os.write(fh, encrypted_chunk)
 
 
 def open_fuse(root: str, mount: str, key: bytearray) -> fuse.FUSE:
-    # TODO throw if realpath of root is inside mount
+    # throw if realpath of mount is inside root, which creates
+    # a recursive subfolder, which messes up directory walking:
+    if Path(root) in Path(mount).parents:
+        raise Exception("cannot mount the FUSE inside the drive")
+
     return fuse.FUSE(CrytoOperations(root, key), mount, foreground=True, allow_other=False)
 
 

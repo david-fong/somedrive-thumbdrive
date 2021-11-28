@@ -1,11 +1,14 @@
 import os
 import pathlib
 import psutil
-from Crypto.Cipher import ChaCha20
-import win32api
-import win32con
-import win32file
 import secrets
+from Crypto.Cipher import ChaCha20
+try:
+    import win32api
+    import win32con
+    import win32file
+except:
+    pass
 
 # Note: The ChaCha20 stream cipher seems like a sensible choice
 # provides efficient random access and has some strengths over AES.
