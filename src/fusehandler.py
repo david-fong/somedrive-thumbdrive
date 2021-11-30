@@ -35,7 +35,7 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 
     def create(self, path, mode):
         fh = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
-        nonce = secrets.token_bytes(12)
+        nonce = secrets.token_bytes(24)
         os.write(fh, nonce)
         return fh
 
@@ -52,8 +52,8 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
         st = dict((key, getattr(os.lstat(path), key)) for key in (
             'st_atime', 'st_ctime', 'st_gid', 'st_mode', 'st_mtime',
             'st_nlink', 'st_size', 'st_uid')) # do we need 'std_blocks'?
-        st['st_size'] = st['st_size'] - 12
-        return 
+        st['st_size'] = st['st_size'] - 24
+        return
 
     getxattr = None
 
@@ -67,8 +67,8 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 
     def read(self, path, size, offset, fh):
         with self.rwlock:
-            os.lseek(fh, -12, os.SEEK_END)
-            nonce = os.read(fh, 12)
+            os.lseek(fh, -24, os.SEEK_END)
+            nonce = os.read(fh, 24)
             os.lseek(fh, offset, os.SEEK_SET)
             plain_chunk = os.read(fh, size)
             cipher = ChaCha20.new(key=self.key, nonce=nonce)
@@ -100,8 +100,8 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 
     def truncate(self, path, length, fh=None):
         with open(path, 'r+') as f:
-            f.seek(-12, os.SEEK_END)
-            nonce = f.read(12)
+            f.seek(-24, os.SEEK_END)
+            nonce = f.read(24)
             f.truncate(length)
             f.seek(0, os.SEEK_END)
             f.write(nonce)
@@ -111,8 +111,8 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 
     def write(self, path, data, offset, fh):
         with self.rwlock:
-            os.lseek(fh, -12, os.SEEK_END)
-            nonce = os.read(fh, 12)
+            os.lseek(fh, -24, os.SEEK_END)
+            nonce = os.read(fh, 24)
             os.lseek(fh, offset, os.SEEK_SET)
             plain_chunk = data
             cipher = ChaCha20.new(key=self.key, nonce=nonce)
