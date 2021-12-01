@@ -19,8 +19,8 @@ class Application(tkinter.Tk):
         self.style = Style('journal')
         self.title('SOMEdrive Thumbdrive')
         self.window = mainWindow()
-        self.wm_geometry("400x200")
-        #self.resizable(0,0)
+        self.wm_geometry("400x150")
+        self.resizable(0,0)
         photo = ImageTk.PhotoImage(Image.open("usb-icon8.png"))
         self.iconphoto(False, photo)
         self.window.pack(side='top', fill='both', expand='yes')
@@ -44,7 +44,7 @@ class optionSelection(Page):
         label.pack(side="top", fill = "both", expand=True)
 
 class driveSelection(Page):
-    def __init__(self, parentWindow):
+    def __init__(self):
         Page.__init__(self)
 
         self.columnconfigure(0, weight=1)
@@ -111,7 +111,7 @@ class manageUsers(Page):
         self.newUserButton.grid(column=0, row=1, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
 
         self.handoffUserButton = ttk.Button(self, text = "Handoff to specific user", command = lambda:[self.handoffUserWindow()])
-        self.handoffUserButton.grid(column=0, row=1, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
+        self.handoffUserButton.grid(column=0, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
 
     def newUserWindow(self):
         nuWindow = Toplevel()
@@ -154,12 +154,12 @@ class mainWindow(ttk.Frame):
 
         self.imageLabel = ttk.Label(container, image = img)
         self.imageLabel.image = img
-        self.imageLabel.grid(column=0, row=0, sticky=tkinter.N+tkinter.S, rowspan=3, padx=6)
+        self.imageLabel.grid(column=0, row=0, sticky=tkinter.N+tkinter.S, rowspan=4, padx=6)
 
-        self.encryptButton = ttk.Button(container, text = "Encrypt", command = lambda:[self.ds.place(in_=container, x=0, y=0, width=400, height=500, relheight=1), self.goToDS("ENCRYPT")])
-        self.openButton = ttk.Button(container, text = "Open", command = lambda:[self.ds.place(in_=container, x=0, y=0, width=400, height=500, relheight=1), self.goToDS("OPEN")])
-        self.decryptButton = ttk.Button(container, text = "Decrypt", command = lambda:[self.ds.place(in_=container, x=0, width=400, height=500, y=0, relheight=1), self.goToDS("DECRYPT")])
-        self.manageUserButton = ttk.Button(container, text = "Manage Users", command = lambda:[self.mu.place(in_=container, x=0, width=400, height=500, y=0, relheight=1), self.goToDS("DECRYPT")])
+        self.encryptButton = ttk.Button(container, text = "Encrypt", command = lambda:[self.ds.place(in_=container, x=0, y=0, width=400, relheight=1), self.goToDS("ENCRYPT")])
+        self.openButton = ttk.Button(container, text = "Open", command = lambda:[self.ds.place(in_=container, x=0, y=0, width=400, relheight=1), self.goToDS("OPEN")])
+        self.decryptButton = ttk.Button(container, text = "Decrypt", command = lambda:[self.ds.place(in_=container, x=0, width=400, y=0, relheight=1), self.goToDS("DECRYPT")])
+        self.manageUserButton = ttk.Button(container, text = "Manage Users", command = lambda:[self.mu.place(in_=container, x=0, width=400, y=0, relheight=1), self.goToDS("DECRYPT")])
 
         self.encryptButton.grid(column=1, row=0, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
         self.openButton.grid(column=1, row=1, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
@@ -167,6 +167,7 @@ class mainWindow(ttk.Frame):
         self.manageUserButton.grid(column=1, row=3, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
 
         self.backButton = ttk.Button(self.ds, text = "Back", command = lambda:[self.ds.place_forget(), self.goToOs()])
+        self.backFromUsers = ttk.Button(self.mu, text = "Back", command = lambda:[self.mu.place_forget(), self.goToOsFromMu()])
 
 
     # have function for each button to switch pages
@@ -186,6 +187,7 @@ class mainWindow(ttk.Frame):
         #self.label.pack_forget()
 
         self.backButton.grid(column=1, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
+        self.backFromUsers.grid(column=0, row=3, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
         #self.ds.confirmButton.pack(side = "top", pady = "6")
         #self.ds.show()
 
@@ -197,7 +199,17 @@ class mainWindow(ttk.Frame):
         self.encryptButton.grid(column=1, row=0, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
         self.openButton.grid(column=1, row=1, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
         self.decryptButton.grid(column=1, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
-        self.imageLabel.grid(column=0, row=0, sticky=tkinter.N+tkinter.S, rowspan=3, padx=6)
+        self.imageLabel.grid(column=0, row=0, sticky=tkinter.N+tkinter.S, rowspan=4, padx=6)
+        self.manageUserButton.grid(column=1, row=3, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
+
+    def goToOsFromMu(self):
+        self.mu.grid_forget()
+        self.backFromUsers.grid_forget()
+        #self.label.place(relx=.5, rely=0.3, anchor="c")
+        self.encryptButton.grid(column=1, row=0, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
+        self.openButton.grid(column=1, row=1, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
+        self.decryptButton.grid(column=1, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
+        self.imageLabel.grid(column=0, row=0, sticky=tkinter.N+tkinter.S, rowspan=4, padx=6)
         self.manageUserButton.grid(column=1, row=3, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
 
 
