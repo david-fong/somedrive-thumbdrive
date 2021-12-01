@@ -44,15 +44,16 @@ class optionSelection(Page):
         label.pack(side="top", fill = "both", expand=True)
 
 class driveSelection(Page):
-    def __init__(self):
+    def __init__(self, parentWindow):
         Page.__init__(self)
 
+        self.columnconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
         self.driveTextVar = StringVar()
         self.driveTextVar.set("Please select which drive you would like to " + mode.lower())
 
         label = Label(self, textvariable = self.driveTextVar)
-        label.grid(column=0, row=0, sticky=tkinter.W+tkinter.E, pady=6, padx=6)
+        label.grid(column=0, row=0, sticky=tkinter.W+tkinter.E, pady=6, padx=6, columnspan=2)
         #label.place(relx=.5, rely=.4)
 
         drives = ["drive1", "drive2", "drive3"] #we would replace this with the function call
@@ -61,11 +62,14 @@ class driveSelection(Page):
         self.driveVar.set(drives[0])
 
         dropdown = OptionMenu(self, self.driveVar, *drives)
-        dropdown.grid(column=0, row=1, sticky=tkinter.W+tkinter.E, pady=6, padx=6)
+        dropdown.grid(column=0, row=1, sticky=tkinter.W+tkinter.E, pady=6, padx=6, columnspan=2)
         #dropdown.place(relx=.5, rely=0.5)
 
         self.confirmButton = ttk.Button(self, text = mode, command = lambda:[self.thumbscanWindow()])
         self.confirmButton.grid(column=0, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
+
+        #self.backButton = ttk.Button(self, text = "Back", command = lambda:[parentWindow.goToOs()])
+       # self.backButton.grid(column=1, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
         #self.confirmButton.place(relx=.5, rely=0.6, anchor="c")
 
     def thumbscan(self):
@@ -162,7 +166,7 @@ class mainWindow(ttk.Frame):
         self.decryptButton.grid(column=1, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
         self.manageUserButton.grid(column=1, row=3, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
 
-        self.backButton = ttk.Button(buttonFrame, text = "Back", command = lambda:[self.ds.place_forget(), self.goToOs()])
+        self.backButton = ttk.Button(self.ds, text = "Back", command = lambda:[self.ds.place_forget(), self.goToOs()])
 
 
     # have function for each button to switch pages
@@ -181,13 +185,14 @@ class mainWindow(ttk.Frame):
         self.ds.driveTextVar.set("Please select which drive you would like to " + mode.lower())
         #self.label.pack_forget()
 
-        self.backButton.pack(side = "bottom", pady = "6")
+        self.backButton.grid(column=1, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
         #self.ds.confirmButton.pack(side = "top", pady = "6")
         #self.ds.show()
 
     def goToOs(self):
-        self.ds.confirmButton.grid_forget()
-        self.backButton.pack_forget()
+        self.ds.confirmButton.pack_forget()
+        self.ds.grid_forget()
+        self.backButton.grid_forget()
         #self.label.place(relx=.5, rely=0.3, anchor="c")
         self.encryptButton.grid(column=1, row=0, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
         self.openButton.grid(column=1, row=1, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
