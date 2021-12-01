@@ -19,7 +19,7 @@ class Application(tkinter.Tk):
         self.style = Style('journal')
         self.title('SOMEdrive Thumbdrive')
         self.window = mainWindow()
-        self.wm_geometry("400x135")
+        self.wm_geometry("400x200")
         #self.resizable(0,0)
         photo = ImageTk.PhotoImage(Image.open("usb-icon8.png"))
         self.iconphoto(False, photo)
@@ -89,12 +89,54 @@ class driveSelection(Page):
         tsWindow.destroy()
         self.confirmButton["state"] = "enabled"
 
+class manageUsers(Page):
+    def __init__(self):
+        Page.__init__(self)
+        self.columnconfigure(0, weight=1)
+
+        drives = ["drive1", "drive2", "drive3"] #we would replace this with the function call
+
+        self.driveVar = StringVar()
+        self.driveVar.set(drives[0])
+
+        dropdown = OptionMenu(self, self.driveVar, *drives)
+        dropdown.grid(column=0, row=0, sticky=tkinter.W+tkinter.E, pady=6, padx=6)
+        #dropdown.place(relx=.5, rely=0.5)
+
+        self.newUserButton = ttk.Button(self, text = "Add New User to Drive", command = lambda:[self.newUserWindow()])
+        self.newUserButton.grid(column=0, row=1, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
+
+        self.handoffUserButton = ttk.Button(self, text = "Handoff to specific user", command = lambda:[self.handoffUserWindow()])
+        self.handoffUserButton.grid(column=0, row=1, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
+
+    def newUserWindow(self):
+        nuWindow = Toplevel()
+        tsLabel = ttk.Label(nuWindow, text = "New User")
+        tsButton = ttk.Button(nuWindow, text = "Confirm", command = lambda:[nuWindow.destroy()])
+        self.newUserButton["state"] = "disabled"
+        self.handoffUserButton["state"] = "disabled"
+        nuWindow.wm_geometry("400x400")
+
+        tsLabel.place(relx=.5, rely=0.5, anchor="c")
+        tsButton.place(relx=.5, rely=0.6, anchor="c")
+
+    def handoffUserWindow(self):
+        hoWindow = Toplevel()
+        tsLabel = ttk.Label(hoWindow, text = "Handoff User")
+        tsButton = ttk.Button(hoWindow, text = "Confirm", command = lambda:[hoWindow.destroy()])
+        self.newUserButton["state"] = "disabled"
+        self.handoffUserButton["state"] = "disabled"
+        hoWindow.wm_geometry("400x400")
+
+        tsLabel.place(relx=.5, rely=0.5, anchor="c")
+        tsButton.place(relx=.5, rely=0.6, anchor="c")
 
 class mainWindow(ttk.Frame):
     def __init__(self):
         ttk.Frame.__init__(self)
 
         self.ds = driveSelection()
+        self.mu = manageUsers()
 
         buttonFrame = ttk.Frame(self)
         container = ttk.Frame(self)
@@ -110,13 +152,15 @@ class mainWindow(ttk.Frame):
         self.imageLabel.image = img
         self.imageLabel.grid(column=0, row=0, sticky=tkinter.N+tkinter.S, rowspan=3, padx=6)
 
-        self.encryptButton = ttk.Button(container, text = "Encrypt", command = lambda:[self.ds.place(in_=container, x=0, y=0, width=400, relheight=1), self.goToDS("ENCRYPT")])
-        self.openButton = ttk.Button(container, text = "Open", command = lambda:[self.ds.place(in_=container, x=0, y=0, width=400, relheight=1), self.goToDS("OPEN")])
-        self.decryptButton = ttk.Button(container, text = "Decrypt", command = lambda:[self.ds.place(in_=container, x=0, width=400, y=0, relheight=1), self.goToDS("DECRYPT")])
+        self.encryptButton = ttk.Button(container, text = "Encrypt", command = lambda:[self.ds.place(in_=container, x=0, y=0, width=400, height=500, relheight=1), self.goToDS("ENCRYPT")])
+        self.openButton = ttk.Button(container, text = "Open", command = lambda:[self.ds.place(in_=container, x=0, y=0, width=400, height=500, relheight=1), self.goToDS("OPEN")])
+        self.decryptButton = ttk.Button(container, text = "Decrypt", command = lambda:[self.ds.place(in_=container, x=0, width=400, height=500, y=0, relheight=1), self.goToDS("DECRYPT")])
+        self.manageUserButton = ttk.Button(container, text = "Manage Users", command = lambda:[self.mu.place(in_=container, x=0, width=400, height=500, y=0, relheight=1), self.goToDS("DECRYPT")])
 
         self.encryptButton.grid(column=1, row=0, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
         self.openButton.grid(column=1, row=1, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
         self.decryptButton.grid(column=1, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
+        self.manageUserButton.grid(column=1, row=3, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
 
         self.backButton = ttk.Button(buttonFrame, text = "Back", command = lambda:[self.ds.place_forget(), self.goToOs()])
 
@@ -131,7 +175,9 @@ class mainWindow(ttk.Frame):
         self.openButton.grid_forget()
         self.decryptButton.grid_forget()
         self.imageLabel.grid_forget()
+        self.manageUserButton.grid_forget()
         self.ds.confirmButton.configure(text=mode)
+        self.ds.confirmButton.grid(column=0, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
         self.ds.driveTextVar.set("Please select which drive you would like to " + mode.lower())
         #self.label.pack_forget()
 
@@ -140,13 +186,14 @@ class mainWindow(ttk.Frame):
         #self.ds.show()
 
     def goToOs(self):
-        self.ds.confirmButton.pack_forget()
+        self.ds.confirmButton.grid_forget()
         self.backButton.pack_forget()
         #self.label.place(relx=.5, rely=0.3, anchor="c")
         self.encryptButton.grid(column=1, row=0, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
         self.openButton.grid(column=1, row=1, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
         self.decryptButton.grid(column=1, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
         self.imageLabel.grid(column=0, row=0, sticky=tkinter.N+tkinter.S, rowspan=3, padx=6)
+        self.manageUserButton.grid(column=1, row=3, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
 
 
 
