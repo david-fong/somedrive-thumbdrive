@@ -10,6 +10,7 @@ mode = "ENCRYPT"
 #   -> Maybe? Have an option at first for what you'd like to do? 
 #   ->> ie. first page asks if you want to: open encrypted drive, decrypt encrypted drive, encrypt non-encrypted drive
 #       so then the first page is more clear?
+#   open -> text box for path to open
 
 class Application(tkinter.Tk):
 

@@ -5,10 +5,10 @@ from ttkbootstrap import Style
 from PIL import ImageTk,Image
 
 mode = "ENCRYPT"
-# TODO: 
+# TODO:
 #   -> Create skeleton pages for each interaction (main page, thumbprint scan pop up window)
 #   -> Populate drop down menus for encrypted drives to open or decrypt, non-encrypted drives to encrypt -> david n brandon will get me a list of these
-#   -> Maybe? Have an option at first for what you'd like to do? 
+#   -> Maybe? Have an option at first for what you'd like to do?
 #   ->> ie. first page asks if you want to: open encrypted drive, decrypt encrypted drive, encrypt non-encrypted drive
 #       so then the first page is more clear?
 
@@ -20,7 +20,7 @@ class Application(tkinter.Tk):
         self.title('SOMEdrive Thumbdrive')
         self.window = mainWindow()
         self.wm_geometry("400x135")
-        self.resizable(0,0)
+        #self.resizable(0,0)
         photo = ImageTk.PhotoImage(Image.open("usb-icon8.png"))
         self.iconphoto(False, photo)
         self.window.pack(side='top', fill='both', expand='yes')
@@ -51,7 +51,8 @@ class driveSelection(Page):
         self.driveTextVar.set("Please select which drive you would like to " + mode.lower())
 
         label = Label(self, textvariable = self.driveTextVar)
-        label.place(relx=.5, rely=.4, anchor="c")
+        label.grid(column=1, row=0, sticky=tkinter.W+tkinter.E, pady=6, padx=6)
+        label.place(relx=.5, rely=.4)
 
         drives = ["drive1", "drive2", "drive3"] #we would replace this with the function call
 
@@ -59,9 +60,11 @@ class driveSelection(Page):
         self.driveVar.set(drives[0])
 
         dropdown = OptionMenu(self, self.driveVar, *drives)
-        dropdown.place(relx=.5, rely=0.5, anchor="c")
+        dropdown.grid(column=1, row=1, sticky=tkinter.W+tkinter.E, pady=6, padx=6)
+        dropdown.place(relx=.5, rely=0.5)
 
-        self.confirmButton = ttk.Button(self, text = mode, command = lambda:[self.thumbscan(), self.thumbscanWindow()])
+        self.confirmButton = ttk.Button(self, text = mode, command = lambda:[self.thumbscanWindow()])
+        self.confirmButton.grid(column=1, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
         self.confirmButton.place(relx=.5, rely=0.6, anchor="c")
 
     def thumbscan(self):
@@ -79,7 +82,7 @@ class driveSelection(Page):
 
         tsLabel.place(relx=.5, rely=0.5, anchor="c")
         tsButton.place(relx=.5, rely=0.6, anchor="c")
-    
+
     def executeThumbScan(self, tsWindow):
         #thumbscan stuff
         tsWindow.destroy()
@@ -91,54 +94,48 @@ class driveSelection(Page):
 class mainWindow(ttk.Frame):
     def __init__(self):
         ttk.Frame.__init__(self)
-        
+
         self.ds = driveSelection()
-        #options = optionSelection()
 
         buttonFrame = ttk.Frame(self)
         container = ttk.Frame(self)
-        
+
         container.columnconfigure(0, weight=3)
         container.columnconfigure(0, weight=1)
         container.pack(side="top", fill="both", expand=True)
         buttonFrame.pack(side="bottom", expand=False)
 
         img = ImageTk.PhotoImage(Image.open("usb-icon5.png").resize((256, 128), Image.ANTIALIAS))
-        #fps.place(in_=container, x=0, y=0, relwidth=1, relheight=1)
-        #options.place(in_=container, x=0, y=0, relwidth=1, relheight=1)
+
         self.imageLabel = ttk.Label(container, image = img)
         self.imageLabel.image = img
         self.imageLabel.grid(column=0, row=0, sticky=tkinter.N+tkinter.S, rowspan=3, padx=6)
-        #self.label = ttk.Label(container, text = "Welcome to ThumbprintThumbdrive").grid(column=1, row=0, rowspan=2)
-        #self.label.place(relx=.5, rely=0.3, anchor="c")
 
-        self.encryptButton = ttk.Button(container, text = "Encrypt", command = lambda:[self.ds.place(in_=container, x=0, y=0, width=500, relheight=1), self.goToDS("ENCRYPT")]).grid(column=1, row=0, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
-        self.openButton = ttk.Button(container, text = "Open", command = lambda:[self.ds.place(in_=container, x=0, y=0, relheight=1), self.goToDS("OPEN")]).grid(column=1, row=1, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
-        self.decryptButton = ttk.Button(container, text = "Decrypt", command = lambda:[self.ds.place(in_=container, x=0, y=0, relheight=1), self.goToDS("DECRYPT")]).grid(column=1, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
+        self.encryptButton = ttk.Button(container, text = "Encrypt", command = lambda:[self.ds.place(in_=container, x=0, y=0, width=500, relheight=1), self.goToDS("ENCRYPT")])
+        self.openButton = ttk.Button(container, text = "Open", command = lambda:[self.ds.place(in_=container, x=0, y=0, width=500, relheight=1), self.goToDS("OPEN")])
+        self.decryptButton = ttk.Button(container, text = "Decrypt", command = lambda:[self.ds.place(in_=container, x=0, width=500, y=0, relheight=1), self.goToDS("DECRYPT")])
 
-        #self.encryptButton.place(relx=.5, rely=0.4, anchor="c")
-        #self.openButton.place(relx=.5, rely=0.5, anchor="c")
-        #self.decryptButton.place(relx=.5, rely=0.6, anchor="c")
+        self.encryptButton.grid(column=1, row=0, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
+        self.openButton.grid(column=1, row=1, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
+        self.decryptButton.grid(column=1, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
 
         self.backButton = ttk.Button(buttonFrame, text = "Back", command = lambda:[self.ds.place_forget(), self.goToOs()])
-        
-        #bFPS.pack(side="left")
-        #self.ds.place_forget()
-        
-    
+
+
     # have function for each button to switch pages
     # place the buttons instead of packing
     # can have button for each option?? and each option can pass in a certain argument to get the correct list, one function for the option
     def goToDS(self, modeArg):
         mode = modeArg
         print(mode)
-        self.encryptButton.pack_forget()
-        self.openButton.pack_forget()
-        self.decryptButton.pack_forget()
+        self.encryptButton.grid_forget()
+        self.openButton.grid_forget()
+        self.decryptButton.grid_forget()
+        self.imageLabel.grid_forget()
         self.ds.confirmButton.configure(text=mode)
         self.ds.driveTextVar.set("Please select which drive you would like to " + mode.lower())
         #self.label.pack_forget()
-        
+
         self.backButton.pack(side = "bottom", pady = "6")
         #self.ds.confirmButton.pack(side = "top", pady = "6")
         #self.ds.show()
@@ -146,10 +143,12 @@ class mainWindow(ttk.Frame):
     def goToOs(self):
         self.ds.confirmButton.pack_forget()
         self.backButton.pack_forget()
-        self.label.place(relx=.5, rely=0.3, anchor="c")
-        self.encryptButton.place(relx=.5, rely=0.4, anchor="c")
-        self.openButton.place(relx=.5, rely=0.5, anchor="c")
-        self.decryptButton.place(relx=.5, rely=0.6, anchor="c")
+        #self.label.place(relx=.5, rely=0.3, anchor="c")
+        self.encryptButton.grid(column=1, row=0, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
+        self.openButton.grid(column=1, row=1, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
+        self.decryptButton.grid(column=1, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
+        self.imageLabel.grid(column=0, row=0, sticky=tkinter.N+tkinter.S, rowspan=3, padx=6)
+
 
 
 
