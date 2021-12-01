@@ -3,8 +3,12 @@ from tkinter import ttk
 from tkinter import *
 from ttkbootstrap import Style
 from PIL import ImageTk,Image
+from pathlib import Path
 
 mode = "ENCRYPT"
+IMAGE_MAIN = "usb-icon5.png"
+IMAGE_ICON = "usb-icon8.png"
+IMAGE_FOLDER = "images"
 # TODO:
 #   -> Create skeleton pages for each interaction (main page, thumbprint scan pop up window)
 #   -> Populate drop down menus for encrypted drives to open or decrypt, non-encrypted drives to encrypt -> david n brandon will get me a list of these
@@ -21,7 +25,7 @@ class Application(tkinter.Tk):
         self.window = mainWindow()
         self.wm_geometry("400x150")
         self.resizable(0,0)
-        photo = ImageTk.PhotoImage(Image.open("usb-icon8.png"))
+        photo = ImageTk.PhotoImage(Image.open(Path(IMAGE_FOLDER, IMAGE_ICON)))
         self.iconphoto(False, photo)
         self.window.pack(side='top', fill='both', expand='yes')
 
@@ -110,7 +114,7 @@ class manageUsers(Page):
         self.newUserButton = ttk.Button(self, text = "Add New User to Drive", command = lambda:[self.newUserWindow()])
         self.newUserButton.grid(column=0, row=1, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
 
-        self.handoffUserButton = ttk.Button(self, text = "Handoff to specific user", command = lambda:[self.handoffUserWindow()])
+        self.handoffUserButton = ttk.Button(self, text = "Handoff to Specific User", command = lambda:[self.handoffUserWindow()])
         self.handoffUserButton.grid(column=0, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
 
     def newUserWindow(self):
@@ -150,7 +154,7 @@ class mainWindow(ttk.Frame):
         container.pack(side="top", fill="both", expand=True)
         buttonFrame.pack(side="bottom", expand=False)
 
-        img = ImageTk.PhotoImage(Image.open("usb-icon5.png").resize((256, 128), Image.ANTIALIAS))
+        img = ImageTk.PhotoImage(Image.open(Path(IMAGE_FOLDER, IMAGE_MAIN)).resize((256, 128), Image.ANTIALIAS))
 
         self.imageLabel = ttk.Label(container, image = img)
         self.imageLabel.image = img
