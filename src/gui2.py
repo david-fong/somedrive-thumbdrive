@@ -47,12 +47,13 @@ class driveSelection(Page):
     def __init__(self):
         Page.__init__(self)
 
+        self.columnconfigure(0, weight=3)
         self.driveTextVar = StringVar()
         self.driveTextVar.set("Please select which drive you would like to " + mode.lower())
 
         label = Label(self, textvariable = self.driveTextVar)
         label.grid(column=1, row=0, sticky=tkinter.W+tkinter.E, pady=6, padx=6)
-        label.place(relx=.5, rely=.4)
+        #label.place(relx=.5, rely=.4)
 
         drives = ["drive1", "drive2", "drive3"] #we would replace this with the function call
 
@@ -61,11 +62,11 @@ class driveSelection(Page):
 
         dropdown = OptionMenu(self, self.driveVar, *drives)
         dropdown.grid(column=1, row=1, sticky=tkinter.W+tkinter.E, pady=6, padx=6)
-        dropdown.place(relx=.5, rely=0.5)
+        #dropdown.place(relx=.5, rely=0.5)
 
         self.confirmButton = ttk.Button(self, text = mode, command = lambda:[self.thumbscanWindow()])
         self.confirmButton.grid(column=1, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
-        self.confirmButton.place(relx=.5, rely=0.6, anchor="c")
+        #self.confirmButton.place(relx=.5, rely=0.6, anchor="c")
 
     def thumbscan(self):
         #label = ttk.Label(self, text = "main page skeleton")
@@ -89,8 +90,6 @@ class driveSelection(Page):
         self.confirmButton["state"] = "enabled"
 
 
-
-
 class mainWindow(ttk.Frame):
     def __init__(self):
         ttk.Frame.__init__(self)
@@ -111,9 +110,9 @@ class mainWindow(ttk.Frame):
         self.imageLabel.image = img
         self.imageLabel.grid(column=0, row=0, sticky=tkinter.N+tkinter.S, rowspan=3, padx=6)
 
-        self.encryptButton = ttk.Button(container, text = "Encrypt", command = lambda:[self.ds.place(in_=container, x=0, y=0, width=500, relheight=1), self.goToDS("ENCRYPT")])
-        self.openButton = ttk.Button(container, text = "Open", command = lambda:[self.ds.place(in_=container, x=0, y=0, width=500, relheight=1), self.goToDS("OPEN")])
-        self.decryptButton = ttk.Button(container, text = "Decrypt", command = lambda:[self.ds.place(in_=container, x=0, width=500, y=0, relheight=1), self.goToDS("DECRYPT")])
+        self.encryptButton = ttk.Button(container, text = "Encrypt", command = lambda:[self.ds.place(x=0, y=0, width=500, relheight=1), self.goToDS("ENCRYPT")])
+        self.openButton = ttk.Button(container, text = "Open", command = lambda:[self.ds.place(x=0, y=0, width=500, relheight=1), self.goToDS("OPEN")])
+        self.decryptButton = ttk.Button(container, text = "Decrypt", command = lambda:[self.ds.place(x=0, width=500, y=0, relheight=1), self.goToDS("DECRYPT")])
 
         self.encryptButton.grid(column=1, row=0, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
         self.openButton.grid(column=1, row=1, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
