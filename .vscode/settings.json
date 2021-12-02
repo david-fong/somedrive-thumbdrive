@@ -3,6 +3,10 @@
 	"files.trimTrailingWhitespace": true,
 	"[python]": {
 		"editor.wordBasedSuggestions": false,
-		"editor.tabSize": 4,
-	}
+		"editor.insertSpaces": false,
+		"editor.tabSize": 3,
+	},
+	"cSpell.words": [
+		"crypter"
+	]
 }
