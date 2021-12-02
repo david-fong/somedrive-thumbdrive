@@ -4,6 +4,7 @@ from tkinter import *
 from ttkbootstrap import Style
 from PIL import ImageTk,Image
 from pathlib import Path
+import service
 
 mode = "ENCRYPT"
 IMAGE_MAIN = "usb-icon5.png"
