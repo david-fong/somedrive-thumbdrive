@@ -37,7 +37,6 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 		fh = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
 		nonce = secrets.token_bytes(24)
 		os.write(fh, nonce)
-		os.lseek(fh, 0, os.SEEK_SET)
 		return fh
 
 	def flush(self, path, fh):
@@ -68,10 +67,9 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 
 	def read(self, path, size, offset, fh):
 		with self.rwlock:
-			os.lseek(fh, -24, os.SEEK_END)
+			os.lseek(fh, 0, os.SEEK_SET)
 			nonce = os.read(fh, 24)
-			print("Read Nonce:  " + str(nonce))
-			os.lseek(fh, offset, os.SEEK_SET)
+			os.lseek(fh, offset+24, os.SEEK_SET)
 			plain_chunk = os.read(fh, size)
 			cipher = ChaCha20.new(key=self.key, nonce=nonce)
 			cipher.seek(offset)
@@ -84,7 +82,6 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 	readlink = os.readlink
 
 	def release(self, path, fh):
-		print("released: " + str(fh))
 		return os.close(fh)
 
 	def rename(self, old, new):
@@ -104,13 +101,7 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 
 	def truncate(self, path, length, fh=None):
 		with open(path, 'r+b') as f:
-			position = f.tell()
-			f.seek(-24, os.SEEK_END)
-			nonce = f.read(24)
-			f.truncate(length)
-			f.seek(length, os.SEEK_SET)
-			f.write(nonce)
-			f.seek(min(length, position))
+			f.truncate(length+24)
 
 	unlink = os.unlink
 	utimens = os.utime
@@ -119,10 +110,8 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 		with self.rwlock:
 			nonce = None
 			with open(path, "rb") as f:
-				f.seek(-24, os.SEEK_END)
 				nonce = f.read(24)
-				print("Write Nonce: " + str(nonce))
-			os.lseek(fh, offset, os.SEEK_SET)
+			os.lseek(fh, offset+24, os.SEEK_SET)
 			cipher = ChaCha20.new(key=self.key, nonce=nonce)
 			cipher.seek(offset)
 			encrypted_chunk = cipher.encrypt(data)
