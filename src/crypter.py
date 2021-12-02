@@ -3,48 +3,10 @@ import pathlib
 import psutil
 import secrets
 from Crypto.Cipher import ChaCha20
-try:
-	import win32api
-	import win32con
-	import win32file
-except:
-	pass
-
-# Note: The ChaCha20 stream cipher seems like a sensible choice
-# provides efficient random access and has some strengths over AES.
-
-BRAND_FILE_NAME = "thumbprint-thumbdrive.txt"
-
-
-def get_removable_drives():
-	drives = [i for i in win32api.GetLogicalDriveStrings().split('\x00') if i]
-	rdrives = [d for d in drives if win32file.GetDriveType(d) == win32con.DRIVE_REMOVABLE]
-	return rdrives
-
-
-def get_encrypted_drives():
-	usb_list = get_removable_drives()
-	return [x for x in usb_list if is_drive_encrypted(x)]
-
-
-def get_unenecrypted_drives():
-	usb_list = get_removable_drives()
-	return [x for x in usb_list if not is_drive_encrypted(x)]
-
-
-def is_drive_encrypted(root: str) -> bool:
-	return pathlib.Path(root, BRAND_FILE_NAME).is_file()
-
 
 CHUNK_SIZE = 1048576
 
-
 def fully_encrypt_drive(root: str, key: bytearray):
-	# throw if the brand file is present
-	brand_path = pathlib.Path(root, BRAND_FILE_NAME)
-
-	if brand_path.is_file():
-		raise IOError("do not encrypt encrypted drive")
 
 	# walk root and encrypt. skip links.
 	for dir, sub_dirs, file_names in os.walk(root):
@@ -69,21 +31,7 @@ def fully_encrypt_drive(root: str, key: bytearray):
 				file.write(nonce)
 
 
-	# add the brand file. it contains a hash of the key
-	#   Interesting: https://stackoverflow.com/questions/25432139/python-cross-platform-hidden-file
-	with open(brand_path, mode="w") as brand_file:
-		brand_file.write("") # TODO
-
-
 def fully_decrypt_drive(root: str, key: bytearray):
-	# throw if brand_file is not present
-	brand_path = pathlib.Path(root, BRAND_FILE_NAME)
-	if not brand_path.is_file():
-		raise IOError("do not decrypt unencrypted drive")
-
-	# remove the brand file
-	os.remove(brand_path)
-
 	# walk root and decrypt. skip links.
 	for dir, sub_dirs, file_names in os.walk(root):
 		for file_name in file_names:
