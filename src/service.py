@@ -43,7 +43,7 @@ def get_encrypted_drives():
 	return [x for x in usb_list if is_drive_encrypted(x)]
 
 
-def get_unenecrypted_drives():
+def get_unencrypted_drives():
 	usb_list = get_removable_drives()
 	return [x for x in usb_list if not is_drive_encrypted(x)]
 
@@ -89,7 +89,7 @@ class EncryptedDriveService:
 		return EncryptedDriveService(drive_root=root, drive_id=drive_id, key=key)
 
 
-	def get_current_handoff_users(root) -> dict[bytearray, UserId]:
+	def get_current_handoff_users(root):
 		"""Returns the list of user names in the handoff file."""
 		file = Path(root, DRIVE_SECURITY_PATH, DRIVE_SECURITY_DOOR_HANDOFF_FILE)
 		user_ids = dict()
@@ -206,7 +206,7 @@ class EncryptedDriveService:
 			door_handoff_file.write(f"{pass_key_hash} {encrypted_drive_key}")
 
 
-	def get_current_vault_users(self) -> list[UserId]:
+	def get_current_vault_users(self):
 		"""Returns a list of userIds in the drive vault."""
 		file = Path(self.drive_root, DRIVE_SECURITY_PATH, DRIVE_SECURITY_DOOR_VAULT_FILE)
 		vault_user_ids = []
@@ -225,7 +225,7 @@ class EncryptedDriveService:
 		return vault_user_ids
 
 
-	def overwrite_handoff(self, user_ids: list[UserId]):
+	def overwrite_handoff(self, user_ids):
 		"""Append user_id to door handoff file."""
 		handoff_file_path = Path(self.drive_root, DRIVE_SECURITY_PATH, DRIVE_SECURITY_DOOR_HANDOFF_FILE)
 		with open(handoff_file_path, "w") as handoff_file:
