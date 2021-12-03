@@ -26,7 +26,7 @@ USER_SECRET_SIZE = 32
 
 
 class UserId:
-	def __init__(self, id: bytearray, email: str, encrypted_drive_key: bytearray):
+	def __init__(self, id: bytes, email: str, encrypted_drive_key: bytes):
 		self.id = id
 		self.email = email
 		self.encrypted_drive_key = encrypted_drive_key
@@ -48,7 +48,7 @@ def get_unencrypted_drives():
 	return [x for x in usb_list if not is_drive_encrypted(x)]
 
 
-def is_drive_encrypted(root: str) -> bool:
+def is_drive_encrypted(root: str):# -> bool:
 	return Path(root, DRIVE_SECURITY_PATH).is_file()
 
 
@@ -89,7 +89,7 @@ class EncryptedDriveService:
 		return EncryptedDriveService(drive_root=root, drive_id=drive_id, key=key)
 
 
-	def get_current_handoff_users(root):
+	def get_current_handoff_users(root):# -> dict[bytes, UserId]:
 		"""Returns the list of user names in the handoff file."""
 		file = Path(root, DRIVE_SECURITY_PATH, DRIVE_SECURITY_DOOR_HANDOFF_FILE)
 		user_ids = dict()
@@ -178,7 +178,7 @@ class EncryptedDriveService:
 		return service
 
 
-	def __init__(self, drive_root: str, drive_id: bytearray, key: bytearray):
+	def __init__(self, drive_root: str, drive_id: bytes, key: bytes):
 		self.drive_root = drive_root
 		self.drive_id = drive_id
 		self.key = key
@@ -206,12 +206,12 @@ class EncryptedDriveService:
 			door_handoff_file.write(f"{pass_key_hash} {encrypted_drive_key}")
 
 
-	def get_current_vault_users(self):
+	def get_current_vault_users(self):# -> list[UserId]:
 		"""Returns a list of userIds in the drive vault."""
 		file = Path(self.drive_root, DRIVE_SECURITY_PATH, DRIVE_SECURITY_DOOR_VAULT_FILE)
 		vault_user_ids = []
 		with open(file, "rb") as cipher_vault_file:
-			cipher = ChaCha20.new(key=self.key, nonce=bytearray(24))
+			cipher = ChaCha20.new(key=self.key, nonce=bytes(24))
 			plain_vault_file = cipher.decrypt(cipher_vault_file.read()).decode("ascii")
 			for line in plain_vault_file.split("\n"):
 				if len(line) == 0:
@@ -240,4 +240,5 @@ class EncryptedDriveService:
 
 
 if __name__ == '__main__':
-	s = EncryptedDriveService.load_encrypted_drive("test-dir", "davidfong19@gmail.com")
+	s = EncryptedDriveService.encrypt_drive("test-dir", "davidfong19@gmail.com")
+	input("press a key to continue.")

@@ -3,6 +3,7 @@
 
 import errno
 import logging
+import platform
 import os
 from pathlib import Path
 import threading
@@ -16,9 +17,7 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 	"""
 	https://libfuse.github.io/doxygen/structfuse__operations.html
 	"""
-	def __init__(self, root, key: bytearray):
-		# TODO throw if brand file is missing or key does not hash to its contents
-
+	def __init__(self, root, key: bytes):
 		self.root = os.path.realpath(root)
 		self.key = key
 		self.rwlock = threading.Lock()
@@ -31,7 +30,10 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 			raise fuse.FuseOSError(errno.EACCES)
 
 	chmod = os.chmod
-	chown = os.chown
+	def chown(path, uid, gid, *, dir_fd=None, follow_symlinks=True):
+		if platform.system() == "Windows":
+			return None
+		return os.chown(path, uid, gid, dir_fd=dir_fd, follow_symlinks=follow_symlinks)
 
 	def create(self, path, mode):
 		fh = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
@@ -44,6 +46,8 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 
 	def fsync(self, path, datasync, fh):
 		if datasync != 0:
+			if platform.system() == "Windows":
+				return os.fsync(fh)
 			return os.fdatasync(fh)
 		else:
 			return os.fsync(fh)
@@ -62,7 +66,10 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 
 	listxattr = None
 	mkdir = os.mkdir
-	mknod = os.mknod
+	def mknod(*args):
+		if platform.system():
+			return None
+		return os.mknod(*args)
 	open = os.open
 
 	def read(self, path, size, offset, fh):
@@ -90,6 +97,8 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 	rmdir = os.rmdir
 
 	def statfs(self, path):
+		if platform.system() == "Windows":
+			return {} # TODO
 		stv = os.statvfs(path)
 		# TODO do any of these need to be modified?
 		return dict((key, getattr(stv, key)) for key in (
@@ -118,7 +127,7 @@ class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 			return os.write(fh, encrypted_chunk)
 
 
-def open_fuse(root: str, mount: str, key: bytearray) -> fuse.FUSE:
+def open_fuse(root: str, mount: str, key: bytes):
 	# throw if realpath of mount is inside root, which creates
 	# a recursive subfolder, which messes up directory walking:
 	if Path(root) in Path(mount).parents:
