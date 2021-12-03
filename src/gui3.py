@@ -1,8 +1,10 @@
 import sys
+from typing import Text
 from PyQt5.uic import loadUi
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QDialog, QApplication, QInputDialog, QMessageBox
+from PyQt5.QtWidgets import QDialog, QApplication, QInputDialog, QMessageBox, QLineEdit, QFileDialog
 from pathlib import Path
+import service
 
 INDEX_MAIN = 0
 INDEX_EN = 1
@@ -38,7 +40,7 @@ class MainWindow(QDialog):
     def goToDecrypt(self):
         changeWindow(DECRYPT_WINDOW)
         self.setWindowTitle("Decryption")
-        
+
 
 class Encrypt(QDialog):
     def __init__(self):
@@ -53,19 +55,24 @@ class Encrypt(QDialog):
 
     def encryption(self):
         drivename = self.unencryptedBox.currentText()
-        #prompt for email TODO
-        #encryptDrive TODO
-        changeWindow(MAIN_WINDOW)
+        email, ok = self.getEmail()
+        if ok:
+            if email:
+                service.EncryptedDriveService.encrypt_drive(drivename, email)
+                changeWindow(MAIN_WINDOW)
 
     def setup(self):
-        #get unencrypted drives TODO
-        listOfDrives = ["Drive 1", "Drive 2"]
+        listOfDrives = service.get_unencrypted_drives()
         self.unencryptedBox.clear()
         self.unencryptedBox.addItems(listOfDrives)
         if (not self.unencryptedBox.currentText()):
             self.encryptConfirm.setEnabled(False)
         else:
             self.encryptConfirm.setEnabled(True)
+
+    def getEmail(self):
+        text, ok = QInputDialog.getText(self, 'Text Input Dialog', 'Enter your email for handoffs:')
+        return (text, ok)
 
 
 class ConfirmPass(QDialog):
@@ -84,7 +91,7 @@ class Decrypt(QDialog):
         super(Decrypt, self).__init__()
         loadUi(DECRYPT_PATH, self)
         if (not self.driveBox.currentText()):
-            self.openConfirm.setEnabled(False)
+            self.mountConfirm.setEnabled(False)
             self.buttonEnroll.setEnabled(False)
             self.buttonHandoff.setEnabled(False)
             self.buttonFullDe.setEnabled(False)
@@ -92,25 +99,33 @@ class Decrypt(QDialog):
         self.buttonDeCancel.clicked.connect(self.cancel)
         self.buttonEnroll.clicked.connect(self.enroll)
         self.buttonHandoff.clicked.connect(self.handoff)
-        self.openConfirm.clicked.connect(self.openUSB)
+        self.mountConfirm.clicked.connect(self.mountUSB)
         self.buttonFullDe.clicked.connect(self.fullDecrypt)
+        self.driveBox.activated.connect(self.authenticate)
+        self.driveInstance = None
+        self.mountPath = ""
 
     def cancel(self):
         changeWindow(MAIN_WINDOW)
         self.setWindowTitle("Main")
 
     def enroll(self):
-        #changeWindow(PASSWORD_WINDOW)
-        self.getTempPassword()
-
-    def getTempPassword(self):
-        text, ok = QInputDialog.getText(self, 'Text Input Dialog', 'Enter your temporary password:')
+        tempPassword, ok = self.getTempPassword('Enter temporary password for new user:')
         if ok:
-            print(text)
-            self.showErrorMessage()
+            print(tempPassword)
+            if (self.driveInstance and self.driveInstance != 1):
+                self.driveInstance.add_new_user(tempPassword)
+                self.buttonEnroll.setEnabled(False)
+            else:
+                print("No Drive Instance")
 
-        else:
-            self.showErrorMessage()
+    def getTempPassword(self, stringPrompt):
+        text, ok = QInputDialog.getText(self, 'Temporary Password', stringPrompt, QLineEdit.Password)
+        return (text, ok)
+
+    def getEmail(self, stringPrompt):
+        text, ok = QInputDialog.getText(self, 'Email', stringPrompt)
+        return (text, ok)
 
     def showErrorMessage(self):
         msgBox = QMessageBox()
@@ -119,44 +134,77 @@ class Decrypt(QDialog):
         msgBox.setWindowTitle("Password Error")
         msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
         msgBox.buttonClicked.connect(Decrypt.msgButtonClick)
-
         returnValue = msgBox.exec()
         changeWindow(MAIN_WINDOW)
 
     def msgButtonClick(i):
         print("Button was clicked")
-    
+
     def handoff(self):
         changeWindow(HANDOFF_WINDOW)
 
-    def openUSB(self):
-        #Check if user has permission TODO
-        #Prompt for password if no permission TODO
-        #Give popup saying password status TODO
-        #Redirect to decrypt or home TODO
-        #TODO
-        pass
+    def mountUSB(self):
+        if (self.mountConfirm.text() == "Mount..."):
+            self.mountPath = self.promptForFilepath()
+            if (self.driveInstance and self.driveInstance != 1):
+                self.driveInstance.mount_fuse(self.mountPath)
+
+            self.mountConfirm.setText("Dismount")
+        else:
+            #dismount fuse here TODO
+            self.mountConfirm.setText("Mount...")
+
 
     def fullDecrypt(self):
-        #Check if user has permission TODO
-        #Prompt for password if no permission TODO
-        #Give popup saying password status TODO
-        #Redirect to decrypt or home TODO
-        pass
+        self.driveInstance.decrypt_drive()
+        changeWindow(MAIN_WINDOW)
 
-    def setup(self):
-        #Get drives here
-        #TODO
-        listOfDrives = ["Drive 1", "Drive 2"]
-        self.driveBox.clear()
-        self.driveBox.addItems(listOfDrives)
-        if (not self.driveBox.currentText()):
-            self.openConfirm.setEnabled(False)
+    def promptForFilepath(self):
+        fname = str(QFileDialog.getExistingDirectory(self, "Location to Mount", str(Path.home())))
+        return fname
+
+    def authenticate(self):
+        currentDrive = self.driveBox.currentText()
+        try:
+            self.driveInstance = service.EncryptedDriveService.load_encrypted_drive(currentDrive)
+        except:
+            password, passOk = self.getTempPassword('Enter your temporary password:')
+            if (passOk):
+                email, emailOk = self.getEmail("Enter email this machine with:")
+                if (emailOk):
+                    try:
+                        self.driveInstance = service.EncryptedDriveService.load_encrypted_drive_new_user(currentDrive, password, email)
+                    except:
+                        print("Would get drive here")
+                        self.driveInstance = 1
+
+
+
+        if (self.driveInstance == None):
+            self.mountConfirm.setEnabled(False)
             self.buttonEnroll.setEnabled(False)
             self.buttonHandoff.setEnabled(False)
             self.buttonFullDe.setEnabled(False)
         else:
-            self.openConfirm.setEnabled(True)
+            self.mountConfirm.setEnabled(True)
+            self.buttonEnroll.setEnabled(True)
+            self.buttonHandoff.setEnabled(True)
+            self.buttonFullDe.setEnabled(True)
+
+
+    def setup(self):
+        listOfDrives = service.get_encrypted_drives()
+        listOfDrives.insert(0, "")
+        listOfDrives.append("test-dir")
+        self.driveBox.clear()
+        self.driveBox.addItems(listOfDrives)
+        if (not self.driveBox.currentText()):
+            self.mountConfirm.setEnabled(False)
+            self.buttonEnroll.setEnabled(False)
+            self.buttonHandoff.setEnabled(False)
+            self.buttonFullDe.setEnabled(False)
+        else:
+            self.mountConfirm.setEnabled(True)
             self.buttonEnroll.setEnabled(True)
             self.buttonHandoff.setEnabled(True)
             self.buttonFullDe.setEnabled(True)
@@ -169,9 +217,11 @@ class Handoff(QDialog):
         self.buttonHandoffCancel.clicked.connect(self.cancel)
         self.buttonAdd.clicked.connect(self.addUserToBox)
         self.handoffConfirm.clicked.connect(self.getEmails)
+        self.listOfIdObjects = None
 
     def cancel(self):
-        changeWindow(DECRYPT_WINDOW)
+        self.listOfIdObjects = None
+        changeWindow(DECRYPT_WINDOW, INDEX_HAND)
         self.textUsers.clear()
 
     def addUserToBox(self):
@@ -180,17 +230,22 @@ class Handoff(QDialog):
         self.handoffConfirm.setEnabled(True)
 
     def getEmails(self):
-        emails = self.textUsers.toPlainText()
-        changeWindow(MAIN_WINDOW)
-        print(emails)
-        #Add users to handoff TODO
+        emails = set(self.textUsers.toPlainText().split("\n"))
+        listOfEmails = [email.strip() for email in emails]
+        objectIdList = []
+        for email in listOfEmails:
+            objectIdList.append(self.listOfIdObjects[email])
+        decrypt.driveInstance.overwrite_handoff(objectIdList)
+        print(listOfEmails)
+        self.listOfIdObjects = None
+        changeWindow(DECRYPT_WINDOW, INDEX_HAND)
+
         #Send back to homescreen TODO
         self.textUsers.clear()
 
     def setup(self):
-        #Get User Emails from Vault
-        #TODO
-        listOfEmails = ["mslongo@live.ca", "email2", "email3"]
+        self.listOfIdObjects = decrypt.driveInstance.get_current_vault_users()
+        listOfEmails = self.listOfIdObjects.keys()
         self.emailBox.clear()
         self.emailBox.addItems(listOfEmails)
         if (not self.emailBox.currentText()):
@@ -201,8 +256,8 @@ class Handoff(QDialog):
         self.textUsers.clear()
 
 
-def changeWindow(newWindow):
-    if (newWindow[0] == INDEX_DE):
+def changeWindow(newWindow, currentIndex=0):
+    if (newWindow[0] == INDEX_DE and currentIndex != INDEX_HAND):
         decrypt.setup()
     elif (newWindow[0] == INDEX_HAND):
         handoff.setup()

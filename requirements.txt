@@ -1,3 +1,4 @@
 pycryptodome
 psutil
 fusepy
+pywin32

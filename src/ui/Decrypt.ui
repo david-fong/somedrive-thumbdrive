@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>441</width>
-    <height>87</height>
+    <width>439</width>
+    <height>80</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,9 +18,9 @@
     <widget class="QComboBox" name="driveBox"/>
    </item>
    <item row="0" column="3" colspan="2">
-    <widget class="QPushButton" name="openConfirm">
+    <widget class="QPushButton" name="mountConfirm">
      <property name="text">
-      <string>Open</string>
+      <string>Mount...</string>
      </property>
     </widget>
    </item>

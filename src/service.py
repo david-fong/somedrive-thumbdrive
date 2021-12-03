@@ -49,7 +49,7 @@ def get_unencrypted_drives():
 
 
 def is_drive_encrypted(root: str):# -> bool:
-	return Path(root, DRIVE_SECURITY_PATH).is_file()
+	return Path(root, DRIVE_SECURITY_PATH).is_dir()
 
 
 class EncryptedDriveService:
@@ -209,7 +209,7 @@ class EncryptedDriveService:
 	def get_current_vault_users(self):# -> list[UserId]:
 		"""Returns a list of userIds in the drive vault."""
 		file = Path(self.drive_root, DRIVE_SECURITY_PATH, DRIVE_SECURITY_DOOR_VAULT_FILE)
-		vault_user_ids = []
+		vault_user_ids = {}
 		with open(file, "rb") as cipher_vault_file:
 			cipher = ChaCha20.new(key=self.key, nonce=bytes(24))
 			plain_vault_file = cipher.decrypt(cipher_vault_file.read()).decode("ascii")
@@ -217,11 +217,11 @@ class EncryptedDriveService:
 				if len(line) == 0:
 					continue
 				user_id_hex_str, encrypted_drive_key_hex_str, email = line.split()
-				vault_user_ids.append(UserId(
+				vault_user_ids[email] = UserId(
 					bytes.fromhex(user_id_hex_str),
 					email,
 					bytes.fromhex(encrypted_drive_key_hex_str)
-				))
+				)
 		return vault_user_ids
 
 
