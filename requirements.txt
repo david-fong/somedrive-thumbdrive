@@ -1,4 +1,5 @@
-pycryptodome
 psutil
+pycryptodome
 fusepy
-pywin32
+PyQt5
+pywin32; sys_platform == "Windows"

@@ -13,6 +13,7 @@ from Crypto.Cipher import ChaCha20
 import fuse
 
 
+# TODO take out logging and run in background instead of foreground for production
 class CrytoOperations(fuse.LoggingMixIn, fuse.Operations):
 	"""
 	https://libfuse.github.io/doxygen/structfuse__operations.html
@@ -131,9 +132,9 @@ def open_fuse(root: str, mount: str, key: bytes):
 	# throw if realpath of mount is inside root, which creates
 	# a recursive subfolder, which messes up directory walking:
 	if Path(root) in Path(mount).parents:
-		raise Exception("cannot mount the FUSE inside the drive")
+		raise Exception("do not attempt to mount the FUSE inside its source")
 
-	return fuse.FUSE(CrytoOperations(root, key), mount, foreground=True, allow_other=False)
+	return fuse.FUSE(CrytoOperations(root, key), mount, foreground=False, allow_other=False)
 
 
 if __name__ == '__main__':
