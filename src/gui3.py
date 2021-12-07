@@ -37,13 +37,13 @@ class MainWindow(QDialog):
         self.buttonEncrypt.clicked.connect(self.goToEncrypt)
         self.buttonDecrypt.clicked.connect(self.goToDecrypt)
 
-    def goToEncrypt(self):
-        changeWindow(ENCRYPT_WINDOW)
-        self.setWindowTitle("Encryption")
+	def goToEncrypt(self):
+		changeWindow(ENCRYPT_WINDOW)
+		self.setWindowTitle("Encryption")
 
-    def goToDecrypt(self):
-        changeWindow(DECRYPT_WINDOW)
-        self.setWindowTitle("Decryption")
+	def goToDecrypt(self):
+		changeWindow(DECRYPT_WINDOW)
+		self.setWindowTitle("Decryption")
 
 
 class Encrypt(QDialog):
@@ -91,14 +91,13 @@ class Encrypt(QDialog):
 
 
 class ConfirmPass(QDialog):
-    def __init__(self):
-        super(ConfirmPass, self).__init__()
-        loadUi(PASS_PATH, self)
-        self.buttonUserCancel.clicked.connect(self.cancel)
+	def __init__(self):
+		super(ConfirmPass, self).__init__()
+		loadUi(PASS_PATH, self)
+		self.buttonUserCancel.clicked.connect(self.cancel)
 
-    def cancel(self):
-        changeWindow(DECRYPT_WINDOW)
-
+	def cancel(self):
+		changeWindow(DECRYPT_WINDOW)
 
 
 class Decrypt(QDialog):
@@ -284,14 +283,14 @@ class Handoff(QDialog):
 
 
 def changeWindow(newWindow, currentIndex=0):
-    if (newWindow[0] == INDEX_DE and currentIndex != INDEX_HAND):
-        decrypt.setup()
-    elif (newWindow[0] == INDEX_HAND):
-        handoff.setup()
-    elif (newWindow[0] == INDEX_EN):
-        encrypt.setup()
-    widget.setCurrentIndex(newWindow[0])
-    widget.resize(newWindow[1], newWindow[2])
+	if (newWindow[0] == INDEX_DE and currentIndex != INDEX_HAND):
+		decrypt.setup()
+	elif (newWindow[0] == INDEX_HAND):
+		handoff.setup()
+	elif (newWindow[0] == INDEX_EN):
+		encrypt.setup()
+	widget.setCurrentIndex(newWindow[0])
+	widget.resize(newWindow[1], newWindow[2])
 
 
 app = QApplication(sys.argv)
@@ -313,6 +312,6 @@ widget.addWidget(handoff)
 widget.show()
 
 try:
-    sys.exit(app.exec_())
+	sys.exit(app.exec_())
 except:
     print("Closing...")
