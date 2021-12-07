@@ -74,7 +74,7 @@ class driveSelection(Page):
 		self.confirmButton.grid(column=0, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
 
 		#self.backButton = ttk.Button(self, text = "Back", command = lambda:[parentWindow.goToOs()])
-	   # self.backButton.grid(column=1, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
+		# self.backButton.grid(column=1, row=2, sticky=tkinter.W+tkinter.E, pady=3, padx=6)
 		#self.confirmButton.place(relx=.5, rely=0.6, anchor="c")
 
 	def thumbscan(self):
