@@ -2,6 +2,7 @@ import sys
 from typing import Text
 from PyQt5.uic import loadUi
 from PyQt5 import QtWidgets
+from PyQt5 import QtGui
 from PyQt5.QtWidgets import QDialog, QApplication, QInputDialog, QMessageBox, QLineEdit, QFileDialog
 from pathlib import Path
 import service
@@ -26,10 +27,13 @@ DECRYPT_PATH = Path("ui", "Decrypt.ui")
 HANDOFF_PATH = Path("ui", "Handoff.ui")
 PASS_PATH = Path("ui", "ConfirmPassword.ui")
 
+ICON_PATH = Path("images", "usb-icon8.png")
+
 class MainWindow(QDialog):
     def __init__(self):
         super(MainWindow, self).__init__()
         loadUi(MAIN_PATH, self)
+        self.setWindowTitle("SOMEdrive Thumbdrive")
         self.buttonEncrypt.clicked.connect(self.goToEncrypt)
         self.buttonDecrypt.clicked.connect(self.goToDecrypt)
 
@@ -59,7 +63,18 @@ class Encrypt(QDialog):
         if ok:
             if email:
                 service.EncryptedDriveService.encrypt_drive(drivename, email)
+                self.showSuccessMessage()
                 changeWindow(MAIN_WINDOW)
+
+    def showSuccessMessage(self):
+        msgBox = QMessageBox()
+        msgBox.setIcon(QMessageBox.Information)
+        msgBox.setText("Drive Succesfully Encrypted!")
+        msgBox.setWindowTitle("Success!")
+        msgBox.setWindowIcon(QtGui.QIcon(str(ICON_PATH)))
+        msgBox.setStandardButtons(QMessageBox.Ok)
+        msgBox.buttonClicked.connect(Decrypt.msgButtonClick)
+        returnValue = msgBox.exec()
 
     def setup(self):
         listOfDrives = service.get_unencrypted_drives()
@@ -112,12 +127,12 @@ class Decrypt(QDialog):
     def enroll(self):
         tempPassword, ok = self.getTempPassword('Enter temporary password for new user:')
         if ok:
-            print(tempPassword)
             if (self.driveInstance and self.driveInstance != 1):
                 self.driveInstance.add_new_user(tempPassword)
+                self.showSuccessMessage("Drive primed for new user")
                 self.buttonEnroll.setEnabled(False)
             else:
-                print("No Drive Instance")
+                self.showErrorMessage()
 
     def getTempPassword(self, stringPrompt):
         text, ok = QInputDialog.getText(self, 'Temporary Password', stringPrompt, QLineEdit.Password)
@@ -127,18 +142,28 @@ class Decrypt(QDialog):
         text, ok = QInputDialog.getText(self, 'Email', stringPrompt)
         return (text, ok)
 
-    def showErrorMessage(self):
+    def showErrorMessage(self, message="An unknown error occurred."):
         msgBox = QMessageBox()
         msgBox.setIcon(QMessageBox.Warning)
-        msgBox.setText("An Unknown Error Occurred")
+        msgBox.setText(message)
         msgBox.setWindowTitle("Password Error")
+        msgBox.setWindowIcon(QtGui.QIcon(str(ICON_PATH)))
         msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
         msgBox.buttonClicked.connect(Decrypt.msgButtonClick)
         returnValue = msgBox.exec()
-        changeWindow(MAIN_WINDOW)
+
+    def showSuccessMessage(self, message="Drive Succesfully Decrypted!"):
+        msgBox = QMessageBox()
+        msgBox.setIcon(QMessageBox.Information)
+        msgBox.setText(message)
+        msgBox.setWindowTitle("Success!")
+        msgBox.setWindowIcon(QtGui.QIcon(str(ICON_PATH)))
+        msgBox.setStandardButtons(QMessageBox.Ok)
+        msgBox.buttonClicked.connect(Decrypt.msgButtonClick)
+        returnValue = msgBox.exec()
 
     def msgButtonClick(i):
-        print("Button was clicked")
+        pass
 
     def handoff(self):
         changeWindow(HANDOFF_WINDOW)
@@ -147,7 +172,8 @@ class Decrypt(QDialog):
         if (self.mountConfirm.text() == "Mount..."):
             self.mountPath = self.promptForFilepath()
             if (self.driveInstance and self.driveInstance != 1):
-                self.driveInstance.mount_fuse(self.mountPath)
+                path_to_mount = Path(self.mountPath, "mount")
+                self.driveInstance.mount_fuse(str(path_to_mount))
 
             self.mountConfirm.setText("Dismount")
         else:
@@ -157,6 +183,7 @@ class Decrypt(QDialog):
 
     def fullDecrypt(self):
         self.driveInstance.decrypt_drive()
+        self.showSuccessMessage()
         changeWindow(MAIN_WINDOW)
 
     def promptForFilepath(self):
@@ -175,9 +202,9 @@ class Decrypt(QDialog):
                     try:
                         self.driveInstance = service.EncryptedDriveService.load_encrypted_drive_new_user(currentDrive, password, email)
                     except:
-                        print("Would get drive here")
-                        self.driveInstance = 1
-
+                        self.driveInstance = None
+                        self.showErrorMessage("An error occurred during decryption")
+                        changeWindow(MAIN_WINDOW)
 
 
         if (self.driveInstance == None):
@@ -195,7 +222,6 @@ class Decrypt(QDialog):
     def setup(self):
         listOfDrives = service.get_encrypted_drives()
         listOfDrives.insert(0, "")
-        listOfDrives.append("test-dir")
         self.driveBox.clear()
         self.driveBox.addItems(listOfDrives)
         if (not self.driveBox.currentText()):
@@ -214,6 +240,7 @@ class Handoff(QDialog):
     def __init__(self):
         super(Handoff, self).__init__()
         loadUi(HANDOFF_PATH, self)
+        self.setWindowTitle("Handoff")
         self.buttonHandoffCancel.clicked.connect(self.cancel)
         self.buttonAdd.clicked.connect(self.addUserToBox)
         self.handoffConfirm.clicked.connect(self.getEmails)
@@ -269,6 +296,8 @@ def changeWindow(newWindow, currentIndex=0):
 
 app = QApplication(sys.argv)
 widget = QtWidgets.QStackedWidget(objectName="SOMEprintSomedrive")
+widget.setWindowTitle("SOMEdrive Thumbdrive")
+widget.setWindowIcon(QtGui.QIcon(str(ICON_PATH)))
 mainWindow = MainWindow()
 encrypt = Encrypt()
 decrypt = Decrypt()
@@ -286,4 +315,4 @@ widget.show()
 try:
     sys.exit(app.exec_())
 except:
-    print("Bye")
+    print("Closing...")
