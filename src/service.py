@@ -1,3 +1,4 @@
+import re
 import platform
 import os
 from pathlib import Path
@@ -92,8 +93,10 @@ def encrypt_drive(root: str, user_email: str):
 
 	# Setup Local Machine's security folder
 	os.makedirs(MACHINE_SECURITY_PATH, exist_ok=True)
+	os.chmod(MACHINE_SECURITY_PATH, 0o700)
 	with open(MACHINE_SECURITY_PATH / drive_id.hex(), "wb") as user_secret_file:
 		user_secret_file.write(user_secret)
+	os.chmod(MACHINE_SECURITY_PATH / drive_id.hex(), 0o600)
 
 	return OpenDrive(drive_root=root, drive_id=drive_id, key=key)
 
@@ -120,16 +123,38 @@ def load_encrypted_drive(root: str):
 	"""
 	Throws if this machine has no user secret for this drive or the user is not in door-handoff.
 	"""
-	with open(Path(root, DRIVE_SECURITY_PATH, DRIVE_SECURITY_DRIVE_ID_FILE), "rb") as drive_id_file:
+	# get the drive key
+	security_folder = Path(root, DRIVE_SECURITY_PATH)
+	with open(security_folder / DRIVE_SECURITY_DRIVE_ID_FILE, "rb") as drive_id_file:
 		drive_id = drive_id_file.read(DRIVE_ID_SIZE)
 	with open(MACHINE_SECURITY_PATH / drive_id.hex(), "rb") as user_secret_file:
 		user_secret = user_secret_file.read(USER_SECRET_SIZE)
 	user_id = hashlib.sha256(user_secret).digest()
-	cipher = ChaCha20.new(key=user_secret, nonce=bytes(24))
+	user_cipher = ChaCha20.new(key=user_secret, nonce=bytes(24))
 	user = get_current_handoff_users(root).get(user_id)
 	if user is None:
 		raise PermissionError("user is not in door handoff")
-	drive_key = cipher.decrypt(user.encrypted_drive_key)
+	drive_key = user_cipher.decrypt(user.encrypted_drive_key)
+
+	# cycle the user secret
+	user_secret = secrets.token_bytes(USER_SECRET_SIZE)
+	user_cipher = ChaCha20.new(key=user_secret, nonce=bytes(24))
+	encrypted_drive_key = user_cipher.encrypt(drive_key)
+	new_entry = f"{hashlib.sha256(user_secret).hexdigest()} {encrypted_drive_key.hex()}"
+	with open(security_folder / DRIVE_SECURITY_DOOR_VAULT_FILE, "r+b") as vault:
+		drive_cipher = ChaCha20.new(key=drive_key, nonce=bytes(24))
+		plain_vault = drive_cipher.decrypt(vault.read()).decode("ascii")
+		plain_vault = re.sub(f"{user_id.hex()} [a-fA-F0-9]+", new_entry, plain_vault, 1)
+		vault.seek(0, os.SEEK_SET)
+		drive_cipher = ChaCha20.new(key=drive_key, nonce=bytes(24))
+		vault.write(drive_cipher.encrypt(plain_vault.encode("ascii")))
+	with open(security_folder / DRIVE_SECURITY_DOOR_HANDOFF_FILE, "r+") as handoff:
+		pos = handoff.read().find(user_id.hex())
+		handoff.seek(pos)
+		handoff.write(new_entry)
+	with open(MACHINE_SECURITY_PATH / drive_id.hex(), "wb") as user_secret_file:
+		user_secret_file.write(user_secret)
+
 	return OpenDrive(drive_root=root, drive_id=drive_id, key=drive_key)
 
 
@@ -166,8 +191,10 @@ def load_encrypted_drive_new_user(root: str, password_input: str, user_email: st
 	with open(Path(root, DRIVE_SECURITY_PATH, DRIVE_SECURITY_DRIVE_ID_FILE), "rb") as drive_id_file:
 		drive_id = drive_id_file.read(DRIVE_ID_SIZE)
 	os.makedirs(MACHINE_SECURITY_PATH, exist_ok=True)
+	os.chmod(MACHINE_SECURITY_PATH, 0o700)
 	with open(MACHINE_SECURITY_PATH / drive_id.hex(), "wb") as user_secret_file:
 		user_secret_file.write(user_secret)
+	os.chmod(MACHINE_SECURITY_PATH / drive_id.hex(), 0o600)
 
 	# add user to door vault
 	with open(Path(root, DRIVE_SECURITY_PATH, DRIVE_SECURITY_DOOR_VAULT_FILE), mode="ab") as door_vault_file:
@@ -221,11 +248,10 @@ class OpenDrive:
 
 	def get_current_vault_users(self):# -> list[UserId]:
 		"""Returns a list of userIds in the drive vault."""
-		file = Path(self.drive_root, DRIVE_SECURITY_PATH, DRIVE_SECURITY_DOOR_VAULT_FILE)
-		vault_user_ids = {}
-		with open(file, "rb") as cipher_vault_file:
+		with open(Path(self.drive_root, DRIVE_SECURITY_PATH, DRIVE_SECURITY_DOOR_VAULT_FILE), "rb") as cipher_vault_file:
 			cipher = ChaCha20.new(key=self.key, nonce=bytes(24))
 			plain_vault_file = cipher.decrypt(cipher_vault_file.read()).decode("ascii")
+		vault_user_ids = {}
 		for line in plain_vault_file.split("\n"):
 			if len(line) == 0:
 				continue
